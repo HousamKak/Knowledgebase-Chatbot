@@ -1,0 +1,1 @@
+// model-interface.js placeholder

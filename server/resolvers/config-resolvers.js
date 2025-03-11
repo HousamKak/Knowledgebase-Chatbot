@@ -1,0 +1,1 @@
+// config-resolvers.js placeholder

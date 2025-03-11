@@ -1,0 +1,1 @@
+// MessageInput.js placeholder

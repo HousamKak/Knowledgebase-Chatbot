@@ -1,0 +1,1 @@
+// ModelConfig.js placeholder

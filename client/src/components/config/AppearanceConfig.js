@@ -1,0 +1,1 @@
+// AppearanceConfig.js placeholder

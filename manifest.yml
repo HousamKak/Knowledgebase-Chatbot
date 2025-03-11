@@ -1,0 +1,35 @@
+# Atlassian Forge manifest
+modules:
+  macro:
+    - key: heldpdesk chatbot
+      resource: main
+      resolver:
+        function: resolver
+      title: helpdesk chatbot
+      description: An AI assistant that answers questions using multiple LLMs and knowledge sources
+
+  function:
+    - key: resolver
+      handler: server/index.handler
+
+resources:
+  - key: main
+    path: client/build
+    tunnel:
+      port: 3000
+
+permissions:
+  scopes:
+    - storage:app
+    - read:confluence-content.summary
+    - read:confluence-space.summary
+    - read:page:confluence
+  content:
+    styles:
+      - unsafe-inline
+  external:
+    fetch:
+      backend:
+        - https://api.openai.com
+        - https://api.anthropic.com
+        - https://api.halo-istm.example.com

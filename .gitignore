@@ -1,0 +1,34 @@
+# Add files/folders to ignore
+# Dependencies
+node_modules/
+*/node_modules/
+
+# Build artifacts
+/client/build/
+/dist/
+
+# IDE and editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Environment files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.log
+
+# Forge specific
+.forge/
+node_api_key.txt
+
+# Mac files
+.DS_Store

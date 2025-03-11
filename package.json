@@ -1,0 +1,16 @@
+{
+  "name": "helpdesk_chatbot",
+  "version": "1.0.0",
+  "description": "An AI assistant for Confluence with modular LLM support",
+  "private": true,
+  "scripts": {
+    "start:server": "cd server && npm start",
+    "start:client": "cd client && npm start",
+    "build:client": "cd client && npm run build",
+    "build": "npm run build:client",
+    "deploy": "forge deploy"
+  },
+  "devDependencies": {
+    "@forge/cli": "^6.0.0"
+  }
+}

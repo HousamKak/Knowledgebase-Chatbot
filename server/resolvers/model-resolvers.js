@@ -1,0 +1,1 @@
+// model-resolvers.js placeholder
