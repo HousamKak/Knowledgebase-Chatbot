@@ -1,4 +1,4 @@
-// DataSourceConfig.js placeholder
+// components/config/DataSourceConfig.jsx - Modified for web application
 import React, { useState, useEffect } from 'react';
 import { useDatasourceContext } from '../../contexts/DatasourceContext';
 import LoadingSpinner from '../common/LoadingSpinner';
@@ -144,13 +144,9 @@ const DataSourceConfig = () => {
                   <div className="datasource-info">
                     <h4>{source.name}</h4>
                     <p className="datasource-type">
-                      Type: {source.type.charAt(0).toUpperCase() + source.type.slice(1)}
+                      Type: {getSourceTypeDisplay(source.type)}
                     </p>
-                    {source.type === 'confluence' && (
-                      <p className="datasource-details">
-                        Space Key: {source.config.spaceKey}
-                      </p>
-                    )}
+                    {renderSourceDetails(source)}
                   </div>
                   
                   <div className="datasource-status">
@@ -194,5 +190,45 @@ const DataSourceConfig = () => {
     </div>
   );
 };
+
+// Helper function to display user-friendly source type
+function getSourceTypeDisplay(type) {
+  switch (type) {
+    case 'documents':
+      return 'Document Folder';
+    case 'website':
+      return 'Website';
+    case 'pdf':
+      return 'PDF Documents';
+    default:
+      return type.charAt(0).toUpperCase() + type.slice(1);
+  }
+}
+
+// Helper function to render appropriate source details
+function renderSourceDetails(source) {
+  switch (source.type) {
+    case 'documents':
+      return (
+        <p className="datasource-details">
+          Folder: {source.config.folderPath}
+        </p>
+      );
+    case 'website':
+      return (
+        <p className="datasource-details">
+          URL: {source.config.websiteUrl || source.config.folderPath}
+        </p>
+      );
+    case 'pdf':
+      return (
+        <p className="datasource-details">
+          Files: {source.config.pdfFiles || source.config.folderPath}
+        </p>
+      );
+    default:
+      return null;
+  }
+}
 
 export default DataSourceConfig;

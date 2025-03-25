@@ -1,6 +1,5 @@
-// App.js placeholder
+// App.js - Modified for web application
 import React, { useState, useEffect } from 'react';
-import { invoke } from '@forge/bridge';
 import './styles/App.css';
 import { ConfigProvider } from './contexts/ConfigContext';
 import { ModelProvider } from './contexts/ModelContext';
@@ -21,15 +20,19 @@ function App() {
     const checkSetup = async () => {
       try {
         setIsLoading(true);
-        const result = await apiService.checkSetupComplete();
         
-        if (result.success) {
-          setIsSetupComplete(result.setupComplete);
+        // Check if we have a stored configuration in localStorage
+        const storedConfig = localStorage.getItem('app_config');
+        const hasModelKey = localStorage.getItem('api_key_openai') || localStorage.getItem('api_key_anthropic');
+        
+        // If we have both config and at least one API key, setup is complete
+        if (storedConfig && hasModelKey) {
+          setIsSetupComplete(true);
         } else {
-          setError(result.error || 'Failed to check setup status');
+          setIsSetupComplete(false);
         }
       } catch (error) {
-        setError('Error connecting to the app: ' + error.message);
+        setError('Error initializing the app: ' + error.message);
       } finally {
         setIsLoading(false);
       }
@@ -48,7 +51,7 @@ function App() {
       <div className="app-container">
         <div className="loading-container">
           <LoadingSpinner size="large" />
-          <p>Loading Confluence AI Assistant...</p>
+          <p>Loading AI Assistant...</p>
         </div>
       </div>
     );

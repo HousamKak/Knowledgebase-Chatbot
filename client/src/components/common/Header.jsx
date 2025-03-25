@@ -1,4 +1,4 @@
-// Header.js placeholder
+// components/common/Header.jsx - Modified for web application
 import React from 'react';
 import { useModelContext } from '../../contexts/ModelContext';
 import '../../styles/Header.css';
@@ -9,7 +9,7 @@ const Header = ({ showConfigButton, onConfigClick }) => {
   return (
     <header className="app-header">
       <div className="header-title">
-        <h1>Confluence AI Assistant</h1>
+        <h1>AI Knowledge Assistant</h1>
         {selectedModel && (
           <div className="model-badge">
             {selectedModel.name}

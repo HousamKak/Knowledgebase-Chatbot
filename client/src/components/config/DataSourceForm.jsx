@@ -1,12 +1,15 @@
-// DataSourceForm.js placeholder
+// components/config/DataSourceForm.jsx - Modified for web application
 import React, { useState } from 'react';
 import LoadingSpinner from '../common/LoadingSpinner';
 
 const DataSourceForm = ({ initialData, onSubmit, onCancel, isLoading }) => {
   const [formData, setFormData] = useState({
-    type: initialData?.type || 'confluence',
+    type: initialData?.type || 'documents',
     name: initialData?.name || '',
-    config: initialData?.config || { spaceKey: '', includeChildren: true }
+    config: initialData?.config || { 
+      folderPath: '', 
+      includeSubfolders: true 
+    }
   });
 
   const handleInputChange = (e) => {
@@ -30,6 +33,27 @@ const DataSourceForm = ({ initialData, onSubmit, onCancel, isLoading }) => {
     onSubmit(formData);
   };
 
+  const handleFileUpload = (e) => {
+    const files = e.target.files;
+    if (files.length > 0) {
+      const fileNames = Array.from(files).map(file => file.name).join(', ');
+      
+      setFormData(prev => ({
+        ...prev,
+        config: {
+          ...prev.config,
+          folderPath: `${files.length} files selected: ${fileNames}`
+        }
+      }));
+      
+      // In a real implementation, you would handle the file upload here
+      // This could involve:
+      // 1. Uploading to a server
+      // 2. Processing locally with a web worker
+      // 3. Storing in IndexedDB temporarily
+    }
+  };
+
   return (
     <form className="datasource-form" onSubmit={handleSubmit}>
       <h3>{initialData ? 'Edit Data Source' : 'Add Data Source'}</h3>
@@ -43,8 +67,9 @@ const DataSourceForm = ({ initialData, onSubmit, onCancel, isLoading }) => {
           onChange={handleInputChange}
           disabled={isLoading || initialData}
         >
-          <option value="confluence">Confluence Space</option>
-          <option value="halo-istm">Halo ISTM</option>
+          <option value="documents">Document Folder</option>
+          <option value="website">Website</option>
+          <option value="pdf">PDF Documents</option>
         </select>
       </div>
       
@@ -62,65 +87,126 @@ const DataSourceForm = ({ initialData, onSubmit, onCancel, isLoading }) => {
         />
       </div>
       
-      {formData.type === 'confluence' && (
+      {formData.type === 'documents' && (
         <>
           <div className="form-group">
-            <label htmlFor="spaceKey">Space Key:</label>
+            <label htmlFor="folderPath">Document Path/Files:</label>
             <input
-              id="spaceKey"
-              name="spaceKey"
+              id="folderPath"
+              name="folderPath"
               type="text"
-              value={formData.config.spaceKey}
+              value={formData.config.folderPath}
               onChange={handleConfigChange}
-              placeholder="Enter Confluence space key"
+              placeholder="Enter path or select files"
               disabled={isLoading}
               required
             />
+            <div className="file-upload">
+              <label className="upload-button">
+                Select Files
+                <input 
+                  type="file" 
+                  multiple
+                  onChange={handleFileUpload}
+                  disabled={isLoading}
+                />
+              </label>
+            </div>
           </div>
           
           <div className="form-group checkbox">
             <label>
               <input
-                name="includeChildren"
+                name="includeSubfolders"
                 type="checkbox"
-                checked={formData.config.includeChildren}
+                checked={formData.config.includeSubfolders}
                 onChange={handleConfigChange}
                 disabled={isLoading}
               />
-              Include child pages
+              Include subfolders
             </label>
           </div>
         </>
       )}
       
-      {formData.type === 'halo-istm' && (
+      {formData.type === 'website' && (
         <>
           <div className="form-group">
-            <label htmlFor="baseUrl">API URL:</label>
+            <label htmlFor="websiteUrl">Website URL:</label>
             <input
-              id="baseUrl"
-              name="baseUrl"
-              type="text"
-              value={formData.config.baseUrl || ''}
-              onChange={handleConfigChange}
-              placeholder="Enter Halo ISTM API URL"
+              id="websiteUrl"
+              name="websiteUrl"
+              type="url"
+              value={formData.config.websiteUrl || formData.config.folderPath || ''}
+              onChange={(e) => {
+                handleConfigChange({
+                  target: {
+                    name: 'websiteUrl',
+                    value: e.target.value
+                  }
+                });
+                handleConfigChange({
+                  target: {
+                    name: 'folderPath',
+                    value: e.target.value
+                  }
+                });
+              }}
+              placeholder="Enter website URL (e.g., https://example.com)"
               disabled={isLoading}
               required
             />
           </div>
           
           <div className="form-group">
-            <label htmlFor="endpoint">Endpoint:</label>
-            <input
-              id="endpoint"
-              name="endpoint"
-              type="text"
-              value={formData.config.endpoint || ''}
+            <label htmlFor="crawlDepth">Crawl Depth:</label>
+            <select
+              id="crawlDepth"
+              name="crawlDepth"
+              value={formData.config.crawlDepth || 3}
               onChange={handleConfigChange}
-              placeholder="Enter API endpoint"
               disabled={isLoading}
-              required
-            />
+            >
+              <option value="1">1 - Homepage only</option>
+              <option value="2">2 - Homepage + direct links</option>
+              <option value="3">3 - Medium depth</option>
+              <option value="5">5 - Deep crawl</option>
+            </select>
+          </div>
+        </>
+      )}
+      
+      {formData.type === 'pdf' && (
+        <>
+          <div className="form-group">
+            <label htmlFor="pdfFiles">PDF Files:</label>
+            <div className="file-upload">
+              <label className="upload-button">
+                Select PDF Files
+                <input 
+                  type="file" 
+                  multiple 
+                  accept=".pdf"
+                  onChange={(e) => {
+                    const files = e.target.files;
+                    if (files.length > 0) {
+                      const fileNames = Array.from(files).map(file => file.name).join(', ');
+                      
+                      handleConfigChange({
+                        target: {
+                          name: 'folderPath',
+                          value: `${files.length} PDFs: ${fileNames}`
+                        }
+                      });
+                      
+                      // In a real implementation, you would handle the PDF uploads here
+                    }
+                  }}
+                  disabled={isLoading}
+                />
+              </label>
+            </div>
+            <p className="form-note">Selected: {formData.config.folderPath || 'No PDFs selected'}</p>
           </div>
         </>
       )}
@@ -137,7 +223,11 @@ const DataSourceForm = ({ initialData, onSubmit, onCancel, isLoading }) => {
         <button
           type="submit"
           className="save-button"
-          disabled={isLoading || !formData.name || (formData.type === 'confluence' && !formData.config.spaceKey)}
+          disabled={isLoading || !formData.name || (
+            (formData.type === 'documents' || formData.type === 'pdf') && !formData.config.folderPath
+          ) || (
+            formData.type === 'website' && !(formData.config.websiteUrl || formData.config.folderPath)
+          )}
         >
           {isLoading ? <LoadingSpinner size="small" /> : (initialData ? 'Update' : 'Add')}
         </button>
