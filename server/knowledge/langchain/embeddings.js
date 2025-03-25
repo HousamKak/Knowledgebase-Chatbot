@@ -1,6 +1,6 @@
 // knowledge/langchain/embeddings.js - Embeddings factory
 const { OpenAIEmbeddings } = require("@langchain/openai");
-const { TfIdfVectorizer } = require("@langchain/community/embeddings/tfid");
+const { TensorFlowEmbeddings } = require("@langchain/community/embeddings/tensorflow");
 const logger = require('../../utils/logger');
 const { ApiError } = require('../../utils/error-types');
 
@@ -32,9 +32,9 @@ class EmbeddingsFactory {
           maxConcurrency: config.maxConcurrency || 5  // Limit concurrent requests
         });
       
-      case 'tfidf':
-        // TF-IDF is a local option that doesn't require API keys
-        return new TfIdfVectorizer();
+      case 'tensorflow':
+        // TensorFlow is a local option that doesn't require API keys
+        return new TensorFlowEmbeddings();
       
       // Add more providers as needed
       
@@ -60,9 +60,9 @@ class EmbeddingsFactory {
         ]
       },
       {
-        id: 'tfidf',
-        name: 'TF-IDF',
-        description: 'Term Frequency-Inverse Document Frequency (local, no API key required)',
+        id: 'tensorflow',
+        name: 'TensorFlow',
+        description: 'TensorFlow embeddings (local, no API key required)',
         requiresApiKey: false
       }
     ];

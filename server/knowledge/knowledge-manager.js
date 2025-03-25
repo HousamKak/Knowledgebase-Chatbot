@@ -87,7 +87,7 @@ class KnowledgeManager {
           // Fall back to TF-IDF if available
           try {
             this.embeddings = EmbeddingsFactory.createEmbeddings(
-              { provider: 'tfidf' },
+              { provider: 'tensorflow' },
               {}
             );
             logger.warn('Falling back to TF-IDF embeddings');
