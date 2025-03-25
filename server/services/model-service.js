@@ -233,4 +233,5 @@ class ModelService {
   }
 }
 
-module.exports = ModelService;
+// Export as singleton instance
+module.exports = new ModelService();

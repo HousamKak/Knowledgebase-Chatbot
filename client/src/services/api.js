@@ -1,5 +1,6 @@
 // services/api.js - API client for server communication
 import axios from 'axios';
+import { API_ENDPOINTS } from '../constants/api-endpoints';
 
 // Configure base API URL depending on environment
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3001/api';
@@ -25,7 +26,27 @@ class ApiService {
       return response.data;
     } catch (error) {
       console.error(`API error (${endpoint}):`, error);
-      throw error;
+      
+      // Enhanced error handling
+      if (error.response) {
+        // Server responded with error status
+        return {
+          success: false,
+          error: error.response.data?.error || `Server error: ${error.response.status}`
+        };
+      } else if (error.request) {
+        // Request made but no response received
+        return {
+          success: false,
+          error: 'Network error: No response from server'
+        };
+      } else {
+        // Request setup error
+        return {
+          success: false,
+          error: `Request error: ${error.message}`
+        };
+      }
     }
   }
 
@@ -43,17 +64,17 @@ class ApiService {
     console.log(`Mock API call to ${endpoint} with payload:`, payload);
     
     switch(endpoint) {
-      case 'list_models':
+      case API_ENDPOINTS.LIST_MODELS:
         return this.mockListModels();
-      case 'check_setup_complete':
+      case API_ENDPOINTS.CHECK_SETUP_COMPLETE:
         return this.mockCheckSetupComplete();
-      case 'ask_question':
+      case API_ENDPOINTS.ASK_QUESTION:
         return this.mockAskQuestion(payload);
-      case 'add_data_source':
+      case API_ENDPOINTS.ADD_DATA_SOURCE:
         return this.mockAddDataSource(payload);
-      case 'list_data_sources':
+      case API_ENDPOINTS.LIST_DATA_SOURCES:
         return this.mockListDataSources();
-      case 'get_config':
+      case API_ENDPOINTS.GET_CONFIG:
         return this.mockGetConfig();
       default:
         return { success: true, message: `Mock response for ${endpoint}` };
@@ -62,77 +83,77 @@ class ApiService {
   
   // Model-related endpoints
   async listModels() {
-    return this.request('list_models');
+    return this.request(API_ENDPOINTS.LIST_MODELS);
   }
 
   async setActiveModel(modelType) {
-    return this.request('set_active_model', { modelType });
+    return this.request(API_ENDPOINTS.SET_ACTIVE_MODEL, { modelType });
   }
 
   async updateModelSettings(modelType, settings) {
-    return this.request('update_model_settings', { modelType, settings });
+    return this.request(API_ENDPOINTS.UPDATE_MODEL_SETTINGS, { modelType, settings });
   }
 
   async storeModelApiKey(modelType, apiKey) {
-    return this.request('store_model_api_key', { modelType, apiKey });
+    return this.request(API_ENDPOINTS.STORE_MODEL_API_KEY, { modelType, apiKey });
   }
 
   async deleteModelApiKey(modelType) {
-    return this.request('delete_model_api_key', { modelType });
+    return this.request(API_ENDPOINTS.DELETE_MODEL_API_KEY, { modelType });
   }
 
   async checkModelApiKey(modelType) {
-    return this.request('check_model_api_key', { modelType });
+    return this.request(API_ENDPOINTS.CHECK_MODEL_API_KEY, { modelType });
   }
 
   // Data source-related endpoints
   async listDataSources() {
-    return this.request('list_data_sources');
+    return this.request(API_ENDPOINTS.LIST_DATA_SOURCES);
   }
 
   async addDataSource(type, name, config) {
-    return this.request('add_data_source', { type, name, config });
+    return this.request(API_ENDPOINTS.ADD_DATA_SOURCE, { type, name, config });
   }
 
   async updateDataSource(id, updates) {
-    return this.request('update_data_source', { id, updates });
+    return this.request(API_ENDPOINTS.UPDATE_DATA_SOURCE, { id, updates });
   }
 
   async deleteDataSource(id) {
-    return this.request('delete_data_source', { id });
+    return this.request(API_ENDPOINTS.DELETE_DATA_SOURCE, { id });
   }
 
   async fetchAndIndexData(sourceId) {
-    return this.request('fetch_and_index', { sourceId });
+    return this.request(API_ENDPOINTS.FETCH_AND_INDEX, { sourceId });
   }
 
   // Configuration-related endpoints
   async getConfig() {
-    return this.request('get_config');
+    return this.request(API_ENDPOINTS.GET_CONFIG);
   }
 
   async updateUiConfig(uiConfig) {
-    return this.request('update_ui_config', { uiConfig });
+    return this.request(API_ENDPOINTS.UPDATE_UI_CONFIG, { uiConfig });
   }
 
   async resetConfig() {
-    return this.request('reset_config');
+    return this.request(API_ENDPOINTS.RESET_CONFIG);
   }
 
   async checkSetupComplete() {
-    return this.request('check_setup_complete');
+    return this.request(API_ENDPOINTS.CHECK_SETUP_COMPLETE);
   }
 
   // Query-related endpoints
   async askQuestion(question, modelType) {
-    return this.request('ask_question', { question, modelType });
+    return this.request(API_ENDPOINTS.ASK_QUESTION, { question, modelType });
   }
 
   async getKnowledgeStats() {
-    return this.request('get_knowledge_stats');
+    return this.request(API_ENDPOINTS.GET_KNOWLEDGE_STATS);
   }
   
-  // Mock implementations for development
+  // Mock implementations for development (leaving these as they were)
   mockListModels() {
     const activeModel = localStorage.getItem('active_model') || 'openai';
     
