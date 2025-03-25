@@ -1,1 +1,0 @@
-// embeddings.js placeholder

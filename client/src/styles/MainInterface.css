@@ -1,1 +1,18 @@
 /* MainInterface.css placeholder */
+.main-interface {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    overflow: hidden;
+  }
+  
+  .content-container {
+    flex: 1;
+    overflow: hidden;
+    position: relative;
+  }
+  
+  /* Dark theme adjustments */
+  .dark-theme .main-interface {
+    background-color: #1C2B41;
+  }

@@ -1,1 +1,151 @@
 /* App.css placeholder */
+/* Root styles and variables */
+:root {
+    --primary-color: #0052CC;
+    --primary-hover: #0747A6;
+    --secondary-color: #42526E;
+    --light-bg: #F4F5F7;
+    --dark-bg: #091E42;
+    --light-text: #172B4D;
+    --success-color: #36B37E;
+    --error-color: #FF5630;
+    --warning-color: #FFAB00;
+    --border-color: #DFE1E6;
+    --shadow: 0 4px 8px rgba(9, 30, 66, 0.25);
+    --border-radius: 3px;
+    --font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+  }
+  
+  /* Reset and base styles */
+  * {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+  }
+  
+  body {
+    font-family: var(--font-family);
+    font-size: 14px;
+    line-height: 1.5;
+    color: var(--light-text);
+    background-color: var(--light-bg);
+  }
+  
+  .app-container {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    background-color: white;
+    box-shadow: var(--shadow);
+  }
+  
+  /* Loading container */
+  .loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    height: 100%;
+    padding: 20px;
+    text-align: center;
+  }
+  
+  /* Button styles */
+  .primary-button {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: var(--border-radius);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .primary-button:hover:not(:disabled) {
+    background-color: var(--primary-hover);
+  }
+  
+  .primary-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .secondary-button {
+    background-color: transparent;
+    color: var(--secondary-color);
+    border: 1px solid var(--border-color);
+    padding: 8px 16px;
+    border-radius: var(--border-radius);
+    font-weight: 500;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  
+  .secondary-button:hover:not(:disabled) {
+    background-color: var(--light-bg);
+  }
+  
+  .secondary-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  /* Form styles */
+  .form-group {
+    margin-bottom: 16px;
+  }
+  
+  .form-group label {
+    display: block;
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+  
+  .form-group input,
+  .form-group select,
+  .form-group textarea {
+    width: 100%;
+    padding: 8px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--border-radius);
+    font-family: var(--font-family);
+    font-size: 14px;
+  }
+  
+  .form-group input:focus,
+  .form-group select:focus,
+  .form-group textarea:focus {
+    outline: none;
+    border-color: var(--primary-color);
+  }
+  
+  .input-help {
+    font-size: 12px;
+    color: var(--secondary-color);
+    margin-top: 4px;
+  }
+  
+  .button-container {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  
+  /* Dark theme adjustments - to be activated by JavaScript */
+  .dark-theme {
+    --light-bg: #1C2B41;
+    --dark-bg: #0A1624;
+    --light-text: #E9EAEB;
+    --border-color: #324B66;
+    color: var(--light-text);
+    background-color: var(--dark-bg);
+  }
+  
+  .dark-theme .app-container {
+    background-color: var(--light-bg);
+  }

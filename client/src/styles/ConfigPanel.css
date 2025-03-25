@@ -1,1 +1,332 @@
 /* ConfigPanel.css placeholder */
+.config-panel {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 16px;
+    background-color: white;
+    border-radius: 4px;
+    box-shadow: 0 1px 3px rgba(9, 30, 66, 0.13);
+  }
+  
+  .config-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid #DFE1E6;
+  }
+  
+  .config-header h2 {
+    margin: 0;
+    font-size: 20px;
+  }
+  
+  .config-tabs {
+    display: flex;
+    margin-bottom: 24px;
+    border-bottom: 1px solid #DFE1E6;
+  }
+  
+  .tab-button {
+    padding: 8px 16px;
+    background: none;
+    border: none;
+    border-bottom: 2px solid transparent;
+    font-size: 14px;
+    font-weight: 500;
+    color: #42526E;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .tab-button:hover {
+    color: #0052CC;
+  }
+  
+  .tab-button.active {
+    color: #0052CC;
+    border-bottom-color: #0052CC;
+  }
+  
+  .tab-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 0 8px;
+  }
+  
+  /* Model config styles */
+  .model-config h3,
+  .datasource-config h3,
+  .appearance-config h3 {
+    margin-bottom: 8px;
+    font-size: 16px;
+  }
+  
+  .model-config p,
+  .datasource-config p,
+  .appearance-config p {
+    margin-bottom: 16px;
+    color: #6B778C;
+  }
+  
+  .model-list,
+  .datasource-list {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    margin-bottom: 24px;
+  }
+  
+  .model-item,
+  .datasource-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    border: 1px solid #DFE1E6;
+    border-radius: 4px;
+    background-color: #F4F5F7;
+  }
+  
+  .model-item.selected {
+    border-color: #0052CC;
+    background-color: #DEEBFF;
+  }
+  
+  .model-info h4,
+  .datasource-info h4 {
+    margin: 0 0 4px 0;
+    font-size: 14px;
+  }
+  
+  .model-info p,
+  .datasource-info p {
+    margin: 0;
+    font-size: 12px;
+    color: #6B778C;
+  }
+  
+  .model-actions,
+  .datasource-actions {
+    display: flex;
+    gap: 8px;
+  }
+  
+  .action-button {
+    padding: 6px 12px;
+    font-size: 12px;
+    background-color: white;
+    border: 1px solid #DFE1E6;
+    border-radius: 3px;
+    cursor: pointer;
+    transition: all 0.2s;
+  }
+  
+  .action-button:hover:not(:disabled) {
+    background-color: #F4F5F7;
+  }
+  
+  .action-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  .action-button.delete {
+    color: #DE350B;
+  }
+  
+  .action-button.delete:hover {
+    background-color: #FFEBE6;
+  }
+  
+  .api-key-form {
+    margin-top: 16px;
+    padding: 16px;
+    border: 1px solid #DFE1E6;
+    border-radius: 4px;
+    background-color: #F4F5F7;
+  }
+  
+  .api-key-form h4 {
+    margin: 0 0 12px 0;
+    font-size: 14px;
+  }
+  
+  .button-row {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+    margin-top: 16px;
+  }
+  
+  .cancel-button {
+    padding: 6px 12px;
+    background-color: white;
+    border: 1px solid #DFE1E6;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  
+  .save-button {
+    padding: 6px 12px;
+    background-color: #0052CC;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  
+  .save-button:hover:not(:disabled) {
+    background-color: #0747A6;
+  }
+  
+  .save-button:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  /* Data source specific styles */
+  .datasource-info .datasource-type {
+    color: #6B778C;
+    font-size: 12px;
+    margin-bottom: 4px;
+  }
+  
+  .datasource-info .datasource-details {
+    font-size: 12px;
+    color: #6B778C;
+  }
+  
+  .progress-message {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: #0052CC;
+  }
+  
+  .add-button {
+    padding: 8px 16px;
+    background-color: #0052CC;
+    color: white;
+    border: none;
+    border-radius: 3px;
+    cursor: pointer;
+    margin-bottom: 16px;
+  }
+  
+  .add-button:hover {
+    background-color: #0747A6;
+  }
+  
+  .no-items {
+    padding: 16px;
+    color: #6B778C;
+    text-align: center;
+    background-color: #F4F5F7;
+    border-radius: 4px;
+  }
+  
+  .datasource-form {
+    padding: 16px;
+    background-color: #F4F5F7;
+    border-radius: 4px;
+  }
+  
+  .datasource-form h3 {
+    margin-bottom: 16px;
+  }
+  
+  .form-group.checkbox {
+    display: flex;
+    align-items: center;
+  }
+  
+  .form-group.checkbox label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    cursor: pointer;
+  }
+  
+  .form-group.checkbox input {
+    width: auto;
+    margin: 0;
+  }
+  
+  /* Dark theme adjustments */
+  .dark-theme .config-panel {
+    background-color: #1C2B41;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+  }
+  
+  .dark-theme .config-header {
+    border-bottom-color: #324B66;
+  }
+  
+  .dark-theme .config-tabs {
+    border-bottom-color: #324B66;
+  }
+  
+  .dark-theme .tab-button {
+    color: #C1C7D0;
+  }
+  
+  .dark-theme .tab-button:hover,
+  .dark-theme .tab-button.active {
+    color: #B3D4FF;
+  }
+  
+  .dark-theme .tab-button.active {
+    border-bottom-color: #B3D4FF;
+  }
+  
+  .dark-theme .model-item,
+  .dark-theme .datasource-item {
+    background-color: #293A58;
+    border-color: #324B66;
+  }
+  
+  .dark-theme .model-item.selected {
+    background-color: #0747A6;
+    border-color: #B3D4FF;
+  }
+  
+  .dark-theme .action-button {
+    background-color: #293A58;
+    border-color: #324B66;
+    color: #C1C7D0;
+  }
+  
+  .dark-theme .action-button:hover:not(:disabled) {
+    background-color: #1C2B41;
+  }
+  
+  .dark-theme .action-button.delete {
+    color: #FF5630;
+  }
+  
+  .dark-theme .action-button.delete:hover {
+    background-color: rgba(255, 86, 48, 0.2);
+  }
+  
+  .dark-theme .api-key-form,
+  .dark-theme .datasource-form {
+    background-color: #293A58;
+    border-color: #324B66;
+  }
+  
+  .dark-theme .cancel-button {
+    background-color: #293A58;
+    border-color: #324B66;
+    color: #C1C7D0;
+  }
+  
+  .dark-theme .no-items {
+    background-color: #293A58;
+    color: #C1C7D0;
+  }

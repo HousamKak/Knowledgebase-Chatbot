@@ -1,1 +1,37 @@
 /* LoadingSpinner.css placeholder */
+.loading-spinner {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  
+  .spinner {
+    border: 2px solid rgba(0, 0, 0, 0.1);
+    border-top-color: #0052CC;
+    border-radius: 50%;
+    width: 20px;
+    height: 20px;
+    animation: spin 1s linear infinite;
+  }
+  
+  .loading-spinner.small .spinner {
+    width: 14px;
+    height: 14px;
+    border-width: 2px;
+  }
+  
+  .loading-spinner.large .spinner {
+    width: 32px;
+    height: 32px;
+    border-width: 3px;
+  }
+  
+  @keyframes spin {
+    to { transform: rotate(360deg); }
+  }
+  
+  /* Dark theme adjustments */
+  .dark-theme .spinner {
+    border-color: rgba(255, 255, 255, 0.1);
+    border-top-color: #B3D4FF;
+  }

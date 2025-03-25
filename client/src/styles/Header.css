@@ -1,1 +1,52 @@
 /* Header.css placeholder */
+.app-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 16px;
+    background-color: #0052CC;
+    color: white;
+  }
+  
+  .header-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+  
+  .header-title h1 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 500;
+  }
+  
+  .model-badge {
+    background-color: rgba(255, 255, 255, 0.2);
+    padding: 4px 8px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 500;
+  }
+  
+  .config-button {
+    background-color: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: none;
+    padding: 8px 12px;
+    border-radius: 4px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    transition: background-color 0.2s;
+  }
+  
+  .config-button:hover {
+    background-color: rgba(255, 255, 255, 0.3);
+  }
+  
+  /* Dark theme adjustments */
+  .dark-theme .app-header {
+    background-color: #0747A6;
+  }

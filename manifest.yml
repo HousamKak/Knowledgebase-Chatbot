@@ -1,16 +1,16 @@
 # Atlassian Forge manifest
 modules:
   macro:
-    - key: heldpdesk chatbot
+    - key: knowledgebase-ai-assistant  # Fixed key format
       resource: main
       resolver:
         function: resolver
-      title: helpdesk chatbot
+      title: knowledgebase-ai-assistant
       description: An AI assistant that answers questions using multiple LLMs and knowledge sources
 
   function:
     - key: resolver
-      handler: server/index.handler
+      handler: index.handler
 
 resources:
   - key: main
@@ -33,3 +33,8 @@ permissions:
         - https://api.openai.com
         - https://api.anthropic.com
         - https://api.halo-istm.example.com
+
+app:
+  id: ari:cloud:ecosystem::app/358ee064-140d-458b-8e55-5009b7bceaf8
+  runtime:
+    name: nodejs22.x

@@ -1,1 +1,0 @@
-// query-resolvers.js placeholder

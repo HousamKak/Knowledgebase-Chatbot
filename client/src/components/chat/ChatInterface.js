@@ -1,1 +1,0 @@
-// ChatInterface.js placeholder

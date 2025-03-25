@@ -1,1 +1,0 @@
-// MessageList.js placeholder

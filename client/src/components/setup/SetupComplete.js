@@ -1,1 +1,0 @@
-// SetupComplete.js placeholder

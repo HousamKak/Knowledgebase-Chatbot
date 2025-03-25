@@ -1,1 +1,0 @@
-// ConfigPanel.js placeholder
