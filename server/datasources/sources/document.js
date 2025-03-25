@@ -49,7 +49,14 @@ class DocumentsDataSource extends DataSourceInterface {
       
       // Add custom allowed paths from env
       if (process.env.ALLOWED_DOCUMENT_PATHS) {
-        allowedBasePaths.push(...process.env.ALLOWED_DOCUMENT_PATHS.split(','));
+        process.env.ALLOWED_DOCUMENT_PATHS.split(',').forEach(customPath => {
+          // Validate path format
+          if (path.isAbsolute(customPath) && customPath.trim() !== '') {
+            allowedBasePaths.push(path.normalize(customPath));
+          } else {
+            logger.warn(`Invalid path in ALLOWED_DOCUMENT_PATHS: ${customPath}`);
+          }
+        });
       }
       
       const resolvedPath = path.resolve(this.folderPath);

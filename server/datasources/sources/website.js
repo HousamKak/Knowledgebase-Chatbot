@@ -47,9 +47,14 @@ class WebsiteDataSource extends DataSourceInterface {
       /\/(tag|category)\//i
     ];
     
+    // Request throttling
+    this.requestDelay = parseInt(config.requestDelay || 1000); // Default 1s delay between requests
+    this.maxConcurrent = parseInt(config.maxConcurrent || 5); // Maximum concurrent requests
+    
     // HTTP client settings
     this.timeout = parseInt(config.timeout || 10000);
     this.userAgent = config.userAgent || 'AI Knowledge Assistant Crawler/1.0';
+    this.retries = parseInt(config.retries || 3);
     
     // Create axios instance
     this.client = axios.create({
@@ -57,6 +62,28 @@ class WebsiteDataSource extends DataSourceInterface {
       headers: {
         'User-Agent': this.userAgent
       }
+    });
+    
+    // Add retry logic
+    this.client.interceptors.response.use(undefined, async (error) => {
+      const config = error.config;
+      
+      // Only retry on network errors or 5xx status codes
+      if ((!error.response || error.response.status >= 500) && 
+          (!config._retryCount || config._retryCount < this.retries)) {
+        
+        // Increment retry count
+        config._retryCount = config._retryCount || 0;
+        config._retryCount++;
+        
+        // Delay before retrying (with exponential backoff)
+        const delay = this.requestDelay * Math.pow(2, config._retryCount - 1);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        
+        return this.client(config);
+      }
+      
+      return Promise.reject(error);
     });
   }
 
@@ -73,6 +100,7 @@ class WebsiteDataSource extends DataSourceInterface {
     const queue = [this.baseUrl];
     const documents = [];
     let currentDepth = 0;
+    let activeRequests = 0;
     
     // Check robots.txt if enabled
     let disallowedPaths = [];
@@ -90,8 +118,16 @@ class WebsiteDataSource extends DataSourceInterface {
       });
     }
     
-    // Process the queue
+    // Helper function to delay requests
+    const delay = ms => new Promise(resolve => setTimeout(resolve, ms));
+    
+    // Process URLs with throttling and concurrency control
     while (queue.length > 0 && documents.length < this.maxPages) {
+      // Wait if too many active requests
+      while (activeRequests >= this.maxConcurrent) {
+        await delay(100);
+      }
+      
       // Get next URL
       const currentUrl = queue.shift();
       
@@ -108,59 +144,95 @@ class WebsiteDataSource extends DataSourceInterface {
         continue;
       }
       
-      try {
-        // Fetch page
-        const response = await this.client.get(currentUrl);
-        const contentType = response.headers['content-type'] || '';
-        
-        // Only process HTML pages
-        if (!contentType.includes('text/html')) {
-          continue;
-        }
-        
-        // Parse HTML
-        const $ = cheerio.load(response.data);
-        
-        // Extract text content
-        const title = $('title').text().trim() || currentUrl;
-        const bodyText = this.extractText($);
-        
-        // Create document
-        documents.push({
-          id: Buffer.from(currentUrl).toString('base64'),
-          title: title,
-          content: bodyText,
-          metadata: {
-            source: 'website',
-            url: currentUrl,
-            domain: this.parsedUrl.hostname,
-            lastCrawled: new Date().toISOString()
-          }
+      // Process URL
+      activeRequests++;
+      this.processUrl(currentUrl, currentDepth, visited, queue, documents)
+        .finally(() => {
+          activeRequests--;
         });
-        
-        // Extract links if we should follow them and haven't reached max depth
-        if (this.followLinks && currentDepth < this.crawlDepth) {
-          const links = this.extractLinks($, currentUrl);
-          
-          // Add new links to queue
-          links.forEach(link => {
-            if (!visited.has(link)) {
-              queue.push(link);
-            }
-          });
-        }
-      } catch (error) {
-        logger.error(`Error crawling ${currentUrl}:`, error.message);
-      }
       
-      // If queue is empty at current depth, increment depth
+      // Add delay between requests to avoid overloading the server
+      await delay(this.requestDelay);
+      
+      // If queue is empty at current depth and we haven't reached max depth, increment depth
       if (queue.length === 0 && currentDepth < this.crawlDepth) {
         currentDepth++;
+        logger.debug(`Moving to crawl depth ${currentDepth}`);
+      }
+      
+      // Wait for all active requests to complete before finishing
+      if (queue.length === 0) {
+        while (activeRequests > 0) {
+          await delay(100);
+        }
       }
     }
     
     logger.debug(`Crawled ${visited.size} pages, extracted ${documents.length} documents`);
     return documents;
+  }
+  
+  /**
+   * Process a URL
+   * @param {string} currentUrl URL to process
+   * @param {number} currentDepth Current crawl depth
+   * @param {Set} visited Set of visited URLs
+   * @param {Array} queue Queue of URLs to process
+   * @param {Array} documents Array of documents
+   * @returns {Promise<void>}
+   * @private
+   */
+  async processUrl(currentUrl, currentDepth, visited, queue, documents) {
+    try {
+      // Fetch page
+      const response = await this.client.get(currentUrl);
+      const contentType = response.headers['content-type'] || '';
+      
+      // Only process HTML pages
+      if (!contentType.includes('text/html')) {
+        return;
+      }
+      
+      // Parse HTML
+      const $ = cheerio.load(response.data);
+      
+      // Extract text content
+      const title = $('title').text().trim() || currentUrl;
+      const bodyText = this.extractText($);
+      
+      // Skip if no meaningful content (less than 100 characters)
+      if (bodyText.length < 100) {
+        return;
+      }
+      
+      // Create document
+      documents.push({
+        id: Buffer.from(currentUrl).toString('base64'),
+        title: title,
+        content: bodyText,
+        metadata: {
+          source: 'website',
+          url: currentUrl,
+          domain: this.parsedUrl.hostname,
+          crawlDate: new Date().toISOString(),
+          crawlDepth: currentDepth
+        }
+      });
+      
+      // Extract links if we should follow them and haven't reached max depth
+      if (this.followLinks && currentDepth < this.crawlDepth) {
+        const links = this.extractLinks($, currentUrl);
+        
+        // Add new links to queue
+        links.forEach(link => {
+          if (!visited.has(link)) {
+            queue.push(link);
+          }
+        });
+      }
+    } catch (error) {
+      logger.error(`Error crawling ${currentUrl}:`, error.message);
+    }
   }
 
   /**
@@ -171,16 +243,66 @@ class WebsiteDataSource extends DataSourceInterface {
    */
   extractText($) {
     // Remove scripts, styles, and hidden elements
-    $('script, style, [style*="display:none"], [style*="display: none"]').remove();
+    $('script, style, [style*="display:none"], [style*="display: none"], [style*="visibility:hidden"], [class*="hidden"]').remove();
     
-    // Get text from body
-    const text = $('body').text();
+    // Extract title, headers, and meta description for better context
+    let metadata = '';
+    const title = $('title').text().trim();
+    const description = $('meta[name="description"]').attr('content') || '';
+    
+    if (title) {
+      metadata += `Title: ${title}\n\n`;
+    }
+    
+    if (description) {
+      metadata += `Description: ${description}\n\n`;
+    }
+    
+    // Extract headers to understand document structure
+    const headers = [];
+    $('h1, h2, h3').each((i, el) => {
+      const text = $(el).text().trim();
+      const tag = el.name;
+      if (text) {
+        headers.push(`${tag}: ${text}`);
+      }
+    });
+    
+    if (headers.length > 0) {
+      metadata += `Headers:\n${headers.join('\n')}\n\n`;
+    }
+    
+    // Get main content areas 
+    let mainContent = '';
+    
+    // Try to find main content container
+    const contentSelectors = [
+      'main', 'article', '.content', '.main-content', 
+      '#content', '#main-content', '.post-content',
+      '[role="main"]'
+    ];
+    
+    let contentFound = false;
+    for (const selector of contentSelectors) {
+      if ($(selector).length > 0) {
+        mainContent = $(selector).text().trim();
+        contentFound = true;
+        break;
+      }
+    }
+    
+    // If no content container found, use body
+    if (!contentFound) {
+      mainContent = $('body').text().trim();
+    }
     
     // Clean up text
-    return text
-      .replace(/\s+/g, ' ')
-      .replace(/\n+/g, '\n')
+    const cleanedText = mainContent
+      .replace(/\s+/g, ' ')   // Replace multiple spaces with single space
+      .replace(/\n+/g, '\n')  // Replace multiple newlines with single newline
       .trim();
+    
+    return `${metadata}Content:\n${cleanedText}`;
   }
 
   /**
@@ -202,12 +324,24 @@ class WebsiteDataSource extends DataSourceInterface {
       }
       
       // Resolve relative URL
-      const resolvedUrl = url.resolve(baseUrl, href);
-      const parsedUrl = new URL(resolvedUrl);
+      let resolvedUrl;
+      try {
+        resolvedUrl = new URL(href, baseUrl).href;
+      } catch (error) {
+        return; // Skip invalid URLs
+      }
+      
+      // Normalize URL (remove trailing slashes, fragments, etc.)
+      resolvedUrl = this.normalizeUrl(resolvedUrl);
       
       // Skip if different domain and we're restricting to domain
-      if (this.restrictToDomain && parsedUrl.hostname !== this.parsedUrl.hostname) {
-        return;
+      try {
+        const parsedUrl = new URL(resolvedUrl);
+        if (this.restrictToDomain && parsedUrl.hostname !== this.parsedUrl.hostname) {
+          return;
+        }
+      } catch (error) {
+        return; // Skip invalid URLs
       }
       
       // Skip if matches exclude patterns
@@ -229,6 +363,31 @@ class WebsiteDataSource extends DataSourceInterface {
   }
 
   /**
+   * Normalize URL by removing fragments, etc.
+   * @param {string} url URL to normalize
+   * @returns {string} Normalized URL
+   * @private
+   */
+  normalizeUrl(url) {
+    try {
+      const parsed = new URL(url);
+      
+      // Remove fragment
+      parsed.hash = '';
+      
+      // Remove common tracking parameters
+      const paramsToRemove = ['utm_source', 'utm_medium', 'utm_campaign', 'utm_term', 'utm_content', 'fbclid'];
+      paramsToRemove.forEach(param => {
+        parsed.searchParams.delete(param);
+      });
+      
+      return parsed.href;
+    } catch (error) {
+      return url;
+    }
+  }
+
+  /**
    * Parse robots.txt file to get disallowed paths
    * @returns {Promise<Array<string>>} Array of disallowed paths
    * @private
@@ -243,22 +402,42 @@ class WebsiteDataSource extends DataSourceInterface {
       const disallowedPaths = [];
       const lines = robotsTxt.split('\n');
       
-      let isRelevantUserAgent = false;
+      let currentUserAgent = '*';
+      let isRelevantUserAgent = true;
       
       for (const line of lines) {
-        const trimmedLine = line.trim();
+        const trimmedLine = line.trim().toLowerCase();
+        
+        // Skip comments and empty lines
+        if (trimmedLine.startsWith('#') || trimmedLine === '') {
+          continue;
+        }
         
         // Check for User-agent directive
-        if (trimmedLine.startsWith('User-agent:')) {
-          const agent = trimmedLine.substring('User-agent:'.length).trim();
-          isRelevantUserAgent = agent === '*' || agent === this.userAgent;
+        if (trimmedLine.startsWith('user-agent:')) {
+          const agent = trimmedLine.substring('user-agent:'.length).trim();
+          currentUserAgent = agent;
+          isRelevantUserAgent = agent === '*' || 
+                               this.userAgent.toLowerCase().includes(agent) || 
+                               agent.includes('bot');
         }
         
         // If relevant user agent, extract Disallow directives
-        if (isRelevantUserAgent && trimmedLine.startsWith('Disallow:')) {
-          const path = trimmedLine.substring('Disallow:'.length).trim();
+        if (isRelevantUserAgent && trimmedLine.startsWith('disallow:')) {
+          const path = trimmedLine.substring('disallow:'.length).trim();
           if (path) {
-            disallowedPaths.push(path);
+            // Convert robots.txt pattern to regex
+            let regex = path
+              .replace(/\*/g, '.*')
+              .replace(/\?/g, '\\?')
+              .replace(/\./g, '\\.')
+              .replace(/\//g, '\\/');
+              
+            // Add the disallowed path
+            disallowedPaths.push({
+              path: path,
+              regex: new RegExp(`^${regex}`)
+            });
           }
         }
       }
@@ -277,13 +456,38 @@ class WebsiteDataSource extends DataSourceInterface {
    */
   async parseSitemaps() {
     try {
-      // First, try sitemap.xml
-      const sitemapUrl = `${this.parsedUrl.protocol}//${this.parsedUrl.hostname}/sitemap.xml`;
-      const response = await this.client.get(sitemapUrl);
-      const xml = response.data;
+      // Try common sitemap locations
+      const potentialSitemaps = [
+        `${this.parsedUrl.protocol}//${this.parsedUrl.hostname}/sitemap.xml`,
+        `${this.parsedUrl.protocol}//${this.parsedUrl.hostname}/sitemap_index.xml`,
+        `${this.parsedUrl.protocol}//${this.parsedUrl.hostname}/sitemap-index.xml`,
+        `${this.parsedUrl.protocol}//${this.parsedUrl.hostname}/sitemaps.xml`
+      ];
+      
+      let sitemap = null;
+      let sitemapUrl = null;
+      
+      // Try each potential sitemap URL
+      for (const url of potentialSitemaps) {
+        try {
+          const response = await this.client.get(url, { timeout: 5000 });
+          if (response.status === 200 && response.data) {
+            sitemap = response.data;
+            sitemapUrl = url;
+            break;
+          }
+        } catch (error) {
+          // Continue trying other URLs
+        }
+      }
+      
+      if (!sitemap) {
+        logger.debug(`No sitemap found for ${this.parsedUrl.hostname}`);
+        return [];
+      }
       
       // Parse XML
-      const $ = cheerio.load(xml, {
+      const $ = cheerio.load(sitemap, {
         xmlMode: true
       });
       
@@ -293,19 +497,27 @@ class WebsiteDataSource extends DataSourceInterface {
       // Check for sitemap index
       const sitemapTags = $('sitemap loc');
       if (sitemapTags.length > 0) {
-        // This is a sitemap index, extract URLs from each sitemap
-        for (let i = 0; i < sitemapTags.length; i++) {
+        // This is a sitemap index, extract URLs from each sitemap (up to 5 to avoid too many requests)
+        const maxSitemapsToProcess = Math.min(5, sitemapTags.length);
+        
+        for (let i = 0; i < maxSitemapsToProcess; i++) {
           const subsitemapUrl = $(sitemapTags[i]).text();
           try {
-            const subsitemapResponse = await this.client.get(subsitemapUrl);
+            const subsitemapResponse = await this.client.get(subsitemapUrl, { timeout: 5000 });
             const subsitemapXml = subsitemapResponse.data;
             const $subsitemap = cheerio.load(subsitemapXml, {
               xmlMode: true
             });
             
             $subsitemap('url loc').each((i, el) => {
-              urls.push($subsitemap(el).text());
+              const urlText = $subsitemap(el).text().trim();
+              if (urlText) {
+                urls.push(urlText);
+              }
             });
+            
+            // Add delay between requests
+            await new Promise(resolve => setTimeout(resolve, this.requestDelay));
           } catch (error) {
             logger.error(`Error parsing subsitemap ${subsitemapUrl}:`, error.message);
           }
@@ -313,10 +525,14 @@ class WebsiteDataSource extends DataSourceInterface {
       } else {
         // Regular sitemap
         $('url loc').each((i, el) => {
-          urls.push($(el).text());
+          const urlText = $(el).text().trim();
+          if (urlText) {
+            urls.push(urlText);
+          }
         });
       }
       
+      logger.debug(`Found ${urls.length} URLs in sitemap`);
       return urls;
     } catch (error) {
       logger.error('Error parsing sitemap:', error.message);
@@ -327,24 +543,19 @@ class WebsiteDataSource extends DataSourceInterface {
   /**
    * Check if URL is disallowed by robots.txt
    * @param {string} url URL to check
-   * @param {Array<string>} disallowedPaths Array of disallowed paths
+   * @param {Array<Object>} disallowedPaths Array of disallowed paths
    * @returns {boolean} Whether URL is disallowed
    * @private
    */
   isDisallowed(url, disallowedPaths) {
-    const parsedUrl = new URL(url);
-    const path = parsedUrl.pathname;
-    
-    return disallowedPaths.some(disallowedPath => {
-      if (disallowedPath.endsWith('*')) {
-        // Wildcard match
-        const prefix = disallowedPath.slice(0, -1);
-        return path.startsWith(prefix);
-      } else {
-        // Exact match
-        return path === disallowedPath;
-      }
-    });
+    try {
+      const parsedUrl = new URL(url);
+      const path = parsedUrl.pathname + parsedUrl.search;
+      
+      return disallowedPaths.some(item => item.regex.test(path));
+    } catch (error) {
+      return false;
+    }
   }
 
   /**
@@ -357,7 +568,9 @@ class WebsiteDataSource extends DataSourceInterface {
       websiteUrl: this.baseUrl,
       crawlDepth: this.crawlDepth,
       maxPages: this.maxPages,
-      restrictToDomain: this.restrictToDomain
+      restrictToDomain: this.restrictToDomain,
+      followLinks: this.followLinks,
+      requestDelay: this.requestDelay
     };
   }
   
@@ -367,8 +580,13 @@ class WebsiteDataSource extends DataSourceInterface {
    */
   async testConnection() {
     try {
-      await this.client.get(this.baseUrl);
-      return true;
+      const response = await this.client.get(this.baseUrl, { 
+        timeout: 5000,
+        validateStatus: status => status < 500 // Accept any status code below 500
+      });
+      
+      // Consider 2xx status codes as success
+      return response.status >= 200 && response.status < 300;
     } catch (error) {
       logger.error(`Failed to connect to website ${this.baseUrl}:`, error.message);
       return false;

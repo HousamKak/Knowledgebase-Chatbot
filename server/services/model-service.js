@@ -233,4 +233,4 @@ class ModelService {
   }
 }
 
-module.exports = new ModelService();
+module.exports = ModelService;

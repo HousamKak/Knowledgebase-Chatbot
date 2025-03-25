@@ -11,8 +11,13 @@ class ApiKeyManager {
   constructor() {
     this.configDir = process.env.CONFIG_DIR || path.join(__dirname, '../data');
     this.keysFile = path.join(this.configDir, 'api_keys.json');
-    this.encryptionKey = process.env.ENCRYPTION_KEY || 'default-encryption-key-change-in-production';
+    this.encryptionKey = process.env.ENCRYPTION_KEY;
     
+    if (!this.encryptionKey) {
+      logger.warn('ENCRYPTION_KEY environment variable not set. Using default key is NOT secure for production.');
+      this.encryptionKey = 'default-encryption-key-change-in-production';
+    }
+
     // Ensure config directory exists
     if (!fs.existsSync(this.configDir)) {
       fs.mkdirSync(this.configDir, { recursive: true });
@@ -28,20 +33,20 @@ class ApiKeyManager {
   async storeApiKey(service, apiKey) {
     try {
       const keys = await this.getAllApiKeys();
-      
+
       // Encrypt the API key
       const encryptedKey = this.encrypt(apiKey);
-      
+
       // Store in our keys object
       keys[service] = encryptedKey;
-      
+
       // Write to file
       fs.writeFileSync(
         this.keysFile,
         JSON.stringify(keys, null, 2),
         'utf8'
       );
-      
+
       return true;
     } catch (error) {
       logger.error(`Error storing API key for ${service}:`, error);
@@ -57,11 +62,11 @@ class ApiKeyManager {
   async getApiKey(service) {
     try {
       const keys = await this.getAllApiKeys();
-      
+
       if (!keys[service]) {
         return null;
       }
-      
+
       // Decrypt the API key
       return this.decrypt(keys[service]);
     } catch (error) {
@@ -78,10 +83,10 @@ class ApiKeyManager {
   async deleteApiKey(service) {
     try {
       const keys = await this.getAllApiKeys();
-      
+
       if (keys[service]) {
         delete keys[service];
-        
+
         // Write to file
         fs.writeFileSync(
           this.keysFile,
@@ -89,7 +94,7 @@ class ApiKeyManager {
           'utf8'
         );
       }
-      
+
       return true;
     } catch (error) {
       logger.error(`Error deleting API key for ${service}:`, error);
@@ -167,7 +172,7 @@ class ApiKeyManager {
         // Handle old format or base64 encoded strings
         return Buffer.from(text, 'base64').toString('utf8');
       }
-      
+
       const iv = Buffer.from(textParts[0], 'hex');
       const encryptedText = Buffer.from(textParts[1], 'hex');
       const decipher = crypto.createDecipheriv(
