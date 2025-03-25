@@ -1,7 +1,7 @@
 // routes/config-routes.js - Configuration-related routes
 const express = require('express');
 const configService = require('../services/config-service');
-const { catchAsync } = require('../utils/error-handler');
+const { catchAsync } = require('../middleware/error-handler');
 
 const router = express.Router();
 

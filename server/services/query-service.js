@@ -1,6 +1,5 @@
 // services/query-service.js - Query-related services
-const ModelService = require('./model-service');
-const modelService = new ModelService();
+const modelService = require('./model-service');
 const knowledgeManager = require('../knowledge/knowledge-manager');
 const logger = require('../utils/logger');
 const { ApiError } = require('../utils/error-types');

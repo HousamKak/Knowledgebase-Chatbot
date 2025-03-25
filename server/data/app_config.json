@@ -1,0 +1,48 @@
+{
+  "activeModel": "openai",
+  "modelSettings": {
+    "openai": {
+      "name": "OpenAI GPT",
+      "model": "gpt-3.5-turbo",
+      "temperature": 0.7,
+      "maxTokens": 1024
+    },
+    "anthropic": {
+      "name": "Anthropic Claude",
+      "model": "claude-2",
+      "temperature": 0.7,
+      "maxTokens": 1024
+    }
+  },
+  "dataSources": [
+    {
+      "id": "pdf_1742905881718",
+      "type": "pdf",
+      "name": "PSHA",
+      "enabled": true,
+      "config": {
+        "folderPath": "1 PDF files selected",
+        "includeSubfolders": true
+      }
+    }
+  ],
+  "embeddings": {
+    "provider": "openai",
+    "modelName": "text-embedding-ada-002"
+  },
+  "vectorStore": {
+    "type": "memory"
+  },
+  "textSplitter": {
+    "chunkSize": 1000,
+    "chunkOverlap": 200
+  },
+  "retrieval": {
+    "k": 5,
+    "scoreThreshold": 0.5
+  },
+  "ui": {
+    "theme": "light",
+    "chatHistoryLimit": 50
+  }
+}

@@ -1,7 +1,7 @@
 // routes/query-routes.js - Query-related routes
 const express = require('express');
 const queryService = require('../services/query-service');
-const { catchAsync } = require('../utils/error-handler');
+const { catchAsync } = require('../middleware/error-handler');
 
 const router = express.Router();
 

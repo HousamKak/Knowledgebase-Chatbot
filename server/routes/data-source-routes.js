@@ -2,7 +2,7 @@
 const express = require('express');
 const datasourceService = require('../services/datasource-service');
 const fileUploadMiddleware = require('../middleware/file-upload');
-const { catchAsync } = require('../utils/error-handler');
+const { catchAsync } = require('../middleware/error-handler');
 
 const router = express.Router();
 
