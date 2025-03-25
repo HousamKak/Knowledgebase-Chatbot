@@ -1,79 +1,97 @@
-// Main entry point for the server
-// index.js placeholder
-import Resolver from '@forge/resolver';
-import api, { storage, fetch, route } from '@forge/api';
-import { createLogger, format as _format, transports as _transports } from 'winston';
-import { modelResolvers } from '../resolvers/model-resolvers';
-import { sourceResolvers } from '../resolvers/source-resolvers';
-import { configResolvers } from '../resolvers/config-resolvers';
-import { queryResolvers } from '../resolvers/query-resolvers';
+// server/index.js - Main entry point for the server
+require('dotenv').config();
+const express = require('express');
+const cors = require('cors');
+const path = require('path');
+const routes = require('./routes');
+const { errorHandler } = require('./middleware/error-handler');
+const logger = require('./utils/logger');
+const configManager = require('./config/config-manager');
+const knowledgeManager = require('./knowledge/knowledge-manager');
 
-// Initialize logger
-const logger = createLogger({
-    level: 'info',
-    format: _format.json(),
-    transports: [
-        new _transports.File({ filename: 'error.log', level: 'error' }),
-        new _transports.File({ filename: 'combined.log' }),
-    ],
+// Initialize Express
+const app = express();
+const port = process.env.PORT || 3001;
+
+// Configure middleware
+app.use(cors());
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+// Log all requests
+app.use((req, res, next) => {
+  logger.info(`${req.method} ${req.url}`);
+  next();
 });
 
-// Initialize resolver
-const resolver = new Resolver();
+// API routes
+app.use('/api', routes);
 
-// Register all resolvers
-const registerResolvers = () => {
-    // Model related resolvers
-    Object.entries(modelResolvers).forEach(([name, fn]) => {
-        resolver.define(name, async (req) => {
-            try {
-                return await fn(req, { api, storage, fetch, route, logger });
-            } catch (error) {
-                logger.error(`Error in resolver ${name}: ${error.message}`);
-                return { success: false, error: error.message };
-            }
-        });
-    });
+// Serve static files in production
+if (process.env.NODE_ENV === 'production') {
+  // Serve static files from the React app build directory
+  app.use(express.static(path.join(__dirname, '../client/build')));
+  
+  // Handle any requests that don't match the ones above
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(__dirname, '../client/build/index.html'));
+  });
+}
 
-    // Data source related resolvers
-    Object.entries(sourceResolvers).forEach(([name, fn]) => {
-        resolver.define(name, async (req) => {
-            try {
-                return await fn(req, { api, storage, fetch, route, logger });
-            } catch (error) {
-                logger.error(`Error in resolver ${name}: ${error.message}`);
-                return { success: false, error: error.message };
-            }
-        });
-    });
+// Error handling middleware
+app.use(errorHandler);
 
-    // Configuration related resolvers
-    Object.entries(configResolvers).forEach(([name, fn]) => {
-        resolver.define(name, async (req) => {
-            try {
-                return await fn(req, { api, storage, fetch, route, logger });
-            } catch (error) {
-                logger.error(`Error in resolver ${name}: ${error.message}`);
-                return { success: false, error: error.message };
-            }
-        });
-    });
+// Initialize necessary services
+async function initServices() {
+  try {
+    // Initialize config
+    await configManager.getConfig();
+    
+    // Initialize knowledge manager
+    await knowledgeManager.initialize();
+    
+    logger.info('All services initialized successfully');
+  } catch (error) {
+    logger.error('Error initializing services:', error);
+  }
+}
 
-    // Query related resolvers
-    Object.entries(queryResolvers).forEach(([name, fn]) => {
-        resolver.define(name, async (req) => {
-            try {
-                return await fn(req, { api, storage, fetch, route, logger });
-            } catch (error) {
-                logger.error(`Error in resolver ${name}: ${error.message}`);
-                return { success: false, error: error.message };
-            }
-        });
-    });
-};
+// Start the server
+const server = app.listen(port, async () => {
+  logger.info(`Server is running on port ${port}`);
+  logger.info(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  
+  // Initialize services
+  await initServices();
+});
 
-// Register all resolvers
-registerResolvers();
+// Handle graceful shutdown
+process.on('SIGTERM', () => {
+  logger.info('SIGTERM signal received: closing HTTP server');
+  server.close(() => {
+    logger.info('HTTP server closed');
+    process.exit(0);
+  });
+});
 
-// Export handler for Forge
-export const handler = resolver.getDefinitions();
+// Handle uncaught exceptions
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  // Perform graceful shutdown
+  server.close(() => {
+    logger.info('HTTP server closed due to uncaught exception');
+    process.exit(1);
+  });
+});
+
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Promise Rejection:', reason);
+  // Perform graceful shutdown
+  server.close(() => {
+    logger.info('HTTP server closed due to unhandled rejection');
+    process.exit(1);
+  });
+});
+
+module.exports = { app, server };
